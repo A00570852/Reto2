@@ -4,38 +4,38 @@ USE IEEE.STD_LOGIC_ARITH.ALL;
 USE IEEE.STD_LOGIC_UNSIGNED.ALL;
 
 ENTITY lcd_controller IS
-PORT(clk : IN STD_LOGIC; --system clock
-     reset_n : IN STD_LOGIC; --active low reinitializes lcd
-     lcd_enable : IN STD_LOGIC; --latches data into lcd controller
+PORT(clk : IN STD_LOGIC; 
+     reset_n : IN STD_LOGIC; 
+     lcd_enable : IN STD_LOGIC; 
      lcd_bus : IN STD_LOGIC_VECTOR(9 DOWNTO 0);
-     busy : OUT STD_LOGIC := '1'; --lcd controller
+     busy : OUT STD_LOGIC := '1'; 
      rw, rs, e : OUT STD_LOGIC;
-     lcd_data : OUT STD_LOGIC_VECTOR(7 DOWNTO 0); --data signals
-     lcd_on : OUT std_logic; --LCD Power ON/OFF
-     lcd_blon : OUT std_logic); --LCD Back Light ON/OFF
+     lcd_data : OUT STD_LOGIC_VECTOR(7 DOWNTO 0); 
+     lcd_on : OUT std_logic; 
+     lcd_blon : OUT std_logic); 
 END lcd_controller;
 
 ARCHITECTURE controller OF lcd_controller IS
 --state machine
   TYPE CONTROL IS(power_up, initialize, ready, send);
   SIGNAL state : CONTROL;
-  CONSTANT freq : INTEGER := 50; --system clock frequency
+  CONSTANT freq : INTEGER := 50; 
   BEGIN
-    lcd_on <= '1'; --LCD Power ON
-    lcd_blon<='1'; --LCD Back Light ON
+    lcd_on <= '1'; 
+    lcd_blon<='1'; 
 
     PROCESS(clk)
-    VARIABLE clk_count : INTEGER := 0; --event counter for timing
+    VARIABLE clk_count : INTEGER := 0; 
 
     BEGIN
     IF(clk'EVENT and clk = '1') THEN
       CASE state IS
       WHEN power_up =>
       busy <= '1';
-      IF(clk_count < (50000 * freq)) THEN --wait 50 ms
+      IF(clk_count < (50000 * freq)) THEN 
       clk_count := clk_count + 1;
       state <= power_up;
-      ELSE --power-up complete
+      ELSE 
       clk_count := 0;
       rs <= '0';
       rw <= '0';
@@ -47,39 +47,39 @@ ARCHITECTURE controller OF lcd_controller IS
     busy <= '1';
     clk_count := clk_count + 1;
 
-    IF(clk_count < (10 * freq)) THEN --function set
-    -- lcd_data <= "00111100"; --2-line mode, display on
-    lcd_data <= "00110100"; --1-line mode, display on
-    --lcd_data <= "00110000"; --1-line mdoe, display off
-    --lcd_data <= "00111000"; --2-line mode, display off
+    IF(clk_count < (10 * freq)) THEN 
+    -- lcd_data <= "00111100"; 
+    lcd_data <= "00110100"; 
+    --lcd_data <= "00110000";
+    --lcd_data <= "00111000"; 
     e <= '1';
     state <= initialize;
-    ELSIF(clk_count < (60 * freq)) THEN --wait 50 us
+    ELSIF(clk_count < (60 * freq)) THEN -
     lcd_data <= "00000000";
     e <= '0';
     state <= initialize;
-    ELSIF(clk_count < (70 * freq)) THEN --display on/off
-    lcd_data <= "00001101"; --display on, cursor off,
+    ELSIF(clk_count < (70 * freq)) THEN 
+    lcd_data <= "00001101"; 
 
     e <= '1';
     state <= initialize;
-    ELSIF(clk_count < (120 * freq)) THEN --wait 50 us
+    ELSIF(clk_count < (120 * freq)) THEN 
     lcd_data <= "00000000";
     e <= '0';
     state <= initialize;
-    ELSIF(clk_count < (130 * freq)) THEN --display clear
+    ELSIF(clk_count < (130 * freq)) THEN 
     lcd_data <= "00000001";
     e <= '1';
     state <= initialize;
-    ELSIF(clk_count < (2130 * freq)) THEN --wait 2 ms
+    ELSIF(clk_count < (2130 * freq)) THEN 
     lcd_data <= "00000000";
     e <= '0';
     state <= initialize;
-    ELSIF(clk_count < (2140 * freq)) THEN --entry mode set
-    lcd_data <= "00000110"; --increment mode, entire
+    ELSIF(clk_count < (2140 * freq)) THEN 
+    lcd_data <= "00000110"; 
     e <= '1';
     state <= initialize;
-    ELSIF(clk_count < (2200 * freq)) THEN --wait 60 us
+    ELSIF(clk_count < (2200 * freq)) THEN 
     lcd_data <= "00000000";
     e <= '0';
     state <= initialize;
@@ -110,16 +110,16 @@ ARCHITECTURE controller OF lcd_controller IS
     state <= ready;
     END IF;
 
-    --send instruction to lcd
+    
     WHEN send =>
     busy <= '1';
-    IF(clk_count < (50 * freq)) THEN --do not exit for 50us
+    IF(clk_count < (50 * freq)) THEN 
     busy <= '1';
-    IF(clk_count < freq) THEN --negative enable
+    IF(clk_count < freq) THEN 
     e <= '0';
-    ELSIF(clk_count < (14 * freq)) THEN --positive enable
+    ELSIF(clk_count < (14 * freq)) THEN 
     e <= '1';
-    ELSIF(clk_count < (27 * freq)) THEN --negative enable
+    ELSIF(clk_count < (27 * freq)) THEN 
     e <= '0';
     END IF;
     clk_count := clk_count + 1;
